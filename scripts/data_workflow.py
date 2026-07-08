@@ -1,8 +1,17 @@
+from pathlib import Path
+
 import pandas as pd
 
+from data_validation import generate_validation_report
+
+BASE_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = BASE_DIR.parent
+
 # File locations
-INPUT_FILE = "../data/raw/sample.csv"
-OUTPUT_FILE = "../output/processed.csv"
+INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
+OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
+VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
+EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
 
 
 def ingest_data(filepath):
@@ -61,6 +70,16 @@ def output_results(df, output_path):
 if __name__ == "__main__":
     try:
         print("Starting workflow...")
+
+        validation_report = generate_validation_report(
+            INPUT_FILE,
+            EXPECTED_COLUMNS,
+            report_path=VALIDATION_REPORT,
+        )
+
+        if not validation_report["passed"]:
+            print("Validation failed. See output/intake_report.json for details.")
+            raise SystemExit(1)
 
         data = ingest_data(INPUT_FILE)
 
