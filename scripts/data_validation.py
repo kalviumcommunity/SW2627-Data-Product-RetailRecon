@@ -58,6 +58,20 @@ def detect_encoding(filepath: str | Path) -> tuple[str, str]:
     return encoding, f"Detected: {encoding} ({confidence_text})"
 
 
+def _load_dataframe(filepath: Path, encoding: str) -> pd.DataFrame:
+    extension = filepath.suffix.lstrip(".").lower()
+
+    if extension == "csv":
+        return pd.read_csv(filepath, encoding=encoding)
+
+    if extension == "json":
+        with filepath.open("r", encoding=encoding) as file_handle:
+            raw_data = pd.read_json(file_handle)
+        return pd.json_normalize(raw_data.to_dict(orient="records"))
+
+    raise ValueError(f"Unsupported format for validation: {extension}")
+
+
 def validate_schema(df: pd.DataFrame, expected_cols: list[str]) -> tuple[bool, str]:
     expected = set(expected_cols)
     actual = set(df.columns)
@@ -96,7 +110,7 @@ def _write_report(report: dict, report_path: str | Path) -> None:
 def generate_validation_report(
     filepath: str | Path,
     expected_cols: list[str],
-    allowed_formats: tuple[str, ...] = ("csv",),
+    allowed_formats: tuple[str, ...] = ("csv", "json"),
     report_path: str | Path = Path("../output/intake_report.json"),
 ) -> dict:
     path = _to_path(filepath)
@@ -124,7 +138,7 @@ def generate_validation_report(
     report["checks"]["encoding"] = encoding_message
 
     try:
-        df = pd.read_csv(path, encoding=encoding if encoding != "unknown" else "utf-8")
+        df = _load_dataframe(path, encoding if encoding != "unknown" else "utf-8")
     except Exception as exc:
         report["checks"]["read"] = f"Could not read file: {exc}"
         _write_report(report, report_path)

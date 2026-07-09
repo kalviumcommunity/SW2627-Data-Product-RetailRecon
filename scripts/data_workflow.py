@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from data_ingestion import document_ingestion, ingest_data
 from data_validation import generate_validation_report
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -12,20 +13,6 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
-
-
-def ingest_data(filepath):
-    """
-    Read the CSV file.
-
-    Input:
-        CSV file path
-
-    Returns:
-        Pandas DataFrame
-    """
-    df = pd.read_csv(filepath)
-    return df
 
 
 def process_data(df):
@@ -81,7 +68,8 @@ if __name__ == "__main__":
             print("Validation failed. See output/intake_report.json for details.")
             raise SystemExit(1)
 
-        data = ingest_data(INPUT_FILE)
+        data = ingest_data(INPUT_FILE, delimiter=",", encoding="utf-8", json_nested=False)
+        document_ingestion(data, INPUT_FILE)
 
         processed = process_data(data)
 
