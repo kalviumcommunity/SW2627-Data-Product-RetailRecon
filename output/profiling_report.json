@@ -1,0 +1,118 @@
+{
+  "timestamp": "2026-07-10T14:06:17.889436",
+  "source": "smoke_test",
+  "shape": {
+    "rows": 5,
+    "columns": 4
+  },
+  "column_names": [
+    "customer_id",
+    "amount",
+    "region",
+    "notes"
+  ],
+  "dtypes": {
+    "customer_id": "object",
+    "amount": "int64",
+    "region": "object",
+    "notes": "object"
+  },
+  "nulls_and_duplicates": {
+    "columns": {
+      "customer_id": {
+        "nulls": 0,
+        "null_%": 0.0
+      },
+      "amount": {
+        "nulls": 0,
+        "null_%": 0.0
+      },
+      "region": {
+        "nulls": 1,
+        "null_%": 20.0
+      },
+      "notes": {
+        "nulls": 5,
+        "null_%": 100.0
+      }
+    },
+    "exact_duplicates": 0,
+    "duplicate_%": 0.0
+  },
+  "numerical_profile": {
+    "amount": {
+      "min": -50.0,
+      "max": 300.0,
+      "mean": 100.0,
+      "median": 100.0,
+      "std": 154.11,
+      "negative_values": 2,
+      "validity_flag": "2 negative value(s) found \u2014 likely data error"
+    }
+  },
+  "categorical_profile": {
+    "customer_id": {
+      "unique_values": 4,
+      "top_values": {
+        "C2": {
+          "count": 2,
+          "pct": 40.0
+        },
+        "C1": {
+          "count": 1,
+          "pct": 20.0
+        },
+        "C3": {
+          "count": 1,
+          "pct": 20.0
+        },
+        "C5": {
+          "count": 1,
+          "pct": 20.0
+        }
+      }
+    },
+    "region": {
+      "unique_values": 3,
+      "top_values": {
+        "North": {
+          "count": 2,
+          "pct": 40.0
+        },
+        "South": {
+          "count": 1,
+          "pct": 20.0
+        },
+        "None": {
+          "count": 1,
+          "pct": 20.0
+        },
+        "East": {
+          "count": 1,
+          "pct": 20.0
+        }
+      }
+    },
+    "notes": {
+      "unique_values": 0,
+      "top_values": {
+        "None": {
+          "count": 5,
+          "pct": 100.0
+        }
+      }
+    }
+  },
+  "issues": [
+    {
+      "column": "notes",
+      "type": "All nulls",
+      "value": "100.0% \u2014 column is entirely empty"
+    },
+    {
+      "column": "amount",
+      "type": "Negative values in business column",
+      "value": "2 row(s)"
+    }
+  ]
+}
