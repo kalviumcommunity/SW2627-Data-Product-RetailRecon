@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 from data_ingestion import document_ingestion, ingest_data
+from data_imputation import impute_missing_values, write_imputation_log
 from data_validation import generate_validation_report
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -12,6 +13,7 @@ PROJECT_DIR = BASE_DIR.parent
 INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
+IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
 EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
 
 
@@ -71,7 +73,14 @@ if __name__ == "__main__":
         data = ingest_data(INPUT_FILE, delimiter=",", encoding="utf-8", json_nested=False)
         document_ingestion(data, INPUT_FILE)
 
-        processed = process_data(data)
+        imputed_data, imputation_report = impute_missing_values(
+            data,
+            critical_columns=["customer_id"],
+            time_series_columns=["date"],
+        )
+        write_imputation_log(imputation_report, IMPUTATION_LOG)
+
+        processed = process_data(imputed_data)
 
         output_results(processed, OUTPUT_FILE)
 
