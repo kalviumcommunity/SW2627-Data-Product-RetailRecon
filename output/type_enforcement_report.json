@@ -1,0 +1,68 @@
+{
+  "timestamp": "2026-07-10T14:22:11.175439",
+  "columns_converted": 3,
+  "dtype_changes": {
+    "transaction_date": {
+      "before": "object",
+      "after": "datetime64[ns]"
+    },
+    "amount": {
+      "before": "object",
+      "after": "float64"
+    },
+    "is_premium": {
+      "before": "int64",
+      "after": "bool"
+    }
+  },
+  "conversion_logs": [
+    {
+      "column": "transaction_date",
+      "conversion": "string \u2192 datetime",
+      "format_used": "%Y-%m-%d",
+      "before_dtype": "object",
+      "after_dtype": "datetime64[ns]",
+      "status": "success"
+    },
+    {
+      "column": "amount",
+      "conversion": "currency string \u2192 float",
+      "strip_pattern": "[$,\u00a3\u20ac\u00a5\\s]",
+      "before_dtype": "object",
+      "after_dtype": "float64",
+      "coerced_to_nan": 0,
+      "status": "success"
+    },
+    {
+      "column": "is_premium",
+      "conversion": "integer/string \u2192 boolean",
+      "mapping_keys": [
+        "0",
+        "1",
+        "0",
+        "1",
+        "yes",
+        "no",
+        "true",
+        "false",
+        "y",
+        "n"
+      ],
+      "before_dtype": "int64",
+      "after_dtype": "bool",
+      "status": "success"
+    }
+  ],
+  "before_dtypes": {
+    "transaction_date": "object",
+    "amount": "object",
+    "is_premium": "int64",
+    "notes": "object"
+  },
+  "after_dtypes": {
+    "transaction_date": "datetime64[ns]",
+    "amount": "float64",
+    "is_premium": "bool",
+    "notes": "object"
+  }
+}
