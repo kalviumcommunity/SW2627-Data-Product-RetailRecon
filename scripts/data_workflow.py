@@ -16,6 +16,40 @@ OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
 
+# ---------------------------------------------------------------------------
+# Behavioural segmentation config.
+# Each dict defines one segment analysis: what to group by, what to measure,
+# and which metrics to rank and visualise.
+# ---------------------------------------------------------------------------
+SEGMENT_CONFIGS = [
+    {
+        "segment_col": "region",
+        "agg_config": {
+            "amount": ["mean", "sum", "count"],
+        },
+        "rename_map": {
+            "amount_mean":  "avg_transaction",
+            "amount_sum":   "total_revenue",
+            "amount_count": "transaction_count",
+        },
+        "rank_metrics": ["total_revenue", "avg_transaction"],
+        "box_cols": ["amount"],
+    },
+    {
+        "segment_col": "customer_id",
+        "agg_config": {
+            "amount": ["sum", "mean", "count"],
+        },
+        "rename_map": {
+            "amount_sum":   "customer_revenue",
+            "amount_mean":  "customer_avg_spend",
+            "amount_count": "customer_transactions",
+        },
+        "rank_metrics": ["customer_revenue"],
+        "box_cols": [],
+    },
+]
+
 
 def process_data(df):
     """
@@ -122,6 +156,14 @@ if __name__ == "__main__":
             trend_lookback=3,
         )
         write_timeseries_report(ts_report, TIMESERIES_REPORT)
+
+        # Behavioural segmentation — compare metrics across user/operational segments
+        segmentation_report = run_behavioural_segmentation(
+            processed,
+            segment_configs=SEGMENT_CONFIGS,
+            output_dir=PLOTS_DIR,
+        )
+        write_segmentation_report(segmentation_report, SEGMENTATION_REPORT)
 
         output_results(processed, OUTPUT_FILE)
 
