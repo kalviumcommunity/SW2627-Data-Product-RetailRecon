@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from data_distribution_analysis import run_distribution_analysis, write_distribution_report
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
 from data_validation import generate_validation_report
@@ -14,6 +15,8 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
+DISTRIBUTION_REPORT = PROJECT_DIR / "output" / "distribution_analysis_report.json"
+PLOTS_DIR = PROJECT_DIR / "output" / "plots"
 EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
 
 
@@ -81,6 +84,17 @@ if __name__ == "__main__":
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
         processed = process_data(imputed_data)
+
+        # Analyse distributions after cleaning — always visualise before reporting
+        distribution_report = run_distribution_analysis(
+            processed,
+            columns=["amount"],
+            output_dir=PLOTS_DIR,
+            segment_comparisons=[
+                {"column": "amount", "segment_column": "region"},
+            ],
+        )
+        write_distribution_report(distribution_report, DISTRIBUTION_REPORT)
 
         output_results(processed, OUTPUT_FILE)
 
