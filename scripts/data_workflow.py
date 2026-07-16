@@ -2,10 +2,10 @@ from pathlib import Path
 
 import pandas as pd
 
+
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
-from data_timeseries_rolling import run_timeseries_analysis, write_timeseries_report
-from data_validation import generate_validation_report
+
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -15,9 +15,6 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
-TIMESERIES_REPORT = PROJECT_DIR / "output" / "timeseries_rolling_report.json"
-PLOTS_DIR = PROJECT_DIR / "output" / "plots"
-EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
 
 
 def process_data(df):
@@ -25,16 +22,14 @@ def process_data(df):
     Clean the dataset.
 
     Input:
-        Raw DataFrame
+        Raw DataFrame (post-deduplication)
 
     Returns:
         Clean DataFrame
     """
-
-    # Remove duplicate rows
-    df = df.drop_duplicates()
-
     # Fill missing numerical values with median
+    # Note: duplicate removal is handled explicitly by run_deduplication()
+    # before this step so every removal is logged for audit purposes.
     for col in df.select_dtypes(include="number").columns:
         df[col] = df[col].fillna(df[col].median())
 
@@ -83,7 +78,36 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        processed = process_data(imputed_data)
+
+
+        # Analyse distributions after cleaning — always visualise before reporting
+        distribution_report = run_distribution_analysis(
+            processed,
+            columns=["amount"],
+            output_dir=PLOTS_DIR,
+            segment_comparisons=[
+                {"column": "amount", "segment_column": "region"},
+            ],
+        )
+        write_distribution_report(distribution_report, DISTRIBUTION_REPORT)
+
+        # Correlation analysis — always analyse relationships before modelling
+        # Pearson: linear relationships | Spearman: monotonic, robust to outliers
+        correlation_report = run_correlation_analysis(
+            processed,
+            output_dir=PLOTS_DIR,
+            methods=["pearson", "spearman"],
+            strong_threshold=0.7,
+        )
+        write_correlation_report(correlation_report, CORRELATION_REPORT)
+
+        # GroupBy segment analysis — never report dataset-wide stats, always segment
+        processed, groupby_report = run_groupby_analysis(
+            processed,
+            segment_configs=SEGMENT_CONFIGS,
+            output_dir=PLOTS_DIR,
+        )
+        write_groupby_report(groupby_report, GROUPBY_REPORT)
 
         # Time-series trend and rolling metrics analysis
         # Rolling averages smooth noise → cumulative sum → resample →
