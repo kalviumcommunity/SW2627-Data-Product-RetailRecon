@@ -2,14 +2,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from data_consistency_validation import (
-    run_consistency_validation,
-    write_validation_failures,
-    write_validation_report,
-)
+
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
-from data_validation import generate_validation_report
+
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -19,9 +15,7 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
-CONSISTENCY_REPORT = PROJECT_DIR / "output" / "consistency_validation_report.json"
-VALIDATION_FAILURES = PROJECT_DIR / "output" / "validation_failures.csv"
-EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
+
 
 # ---------------------------------------------------------------------------
 # Validation rules — one dict per rule, applied in order.
@@ -77,16 +71,14 @@ def process_data(df):
     Clean the dataset.
 
     Input:
-        Raw DataFrame
+        Raw DataFrame (post-deduplication)
 
     Returns:
         Clean DataFrame
     """
-
-    # Remove duplicate rows
-    df = df.drop_duplicates()
-
     # Fill missing numerical values with median
+    # Note: duplicate removal is handled explicitly by run_deduplication()
+    # before this step so every removal is logged for audit purposes.
     for col in df.select_dtypes(include="number").columns:
         df[col] = df[col].fillna(df[col].median())
 
@@ -135,15 +127,7 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        # Apply consistency validation rules — only clean records proceed
-        clean_data, failures, consistency_report = run_consistency_validation(
-            imputed_data,
-            VALIDATION_RULES,
-        )
-        write_validation_report(consistency_report, CONSISTENCY_REPORT)
-        write_validation_failures(failures, VALIDATION_FAILURES)
 
-        processed = process_data(clean_data)
 
         output_results(processed, OUTPUT_FILE)
 
