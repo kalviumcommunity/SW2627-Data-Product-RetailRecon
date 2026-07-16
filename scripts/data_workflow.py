@@ -18,56 +18,16 @@ IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
 
 
 # ---------------------------------------------------------------------------
-# Feature engineering config — extend as the dataset grows.
-# Ratios are created first so binning can reference them.
+# Vectorised computation config — one dict per column.
+# operations: any combination of "minmax", "zscore", "percentile"
+# clip_lower / clip_upper: optional pre-normalisation bounds
 # ---------------------------------------------------------------------------
-
-# Ratio features: normalise amount by days as a spend-rate proxy
-RATIO_CONFIG = [
+VECTORISED_CONFIG = [
     {
-        "name": "amount_per_day",
-        "numerator": "amount",
-        "denominator": lambda df: (
-            (pd.Timestamp.now() - pd.to_datetime(df["date"], errors="coerce")).dt.days
-        ),
-        "description": "Transaction amount normalised by days since date (spend rate proxy)",
-    },
-]
-
-# Binned features: segment customers by spend tier
-BIN_CONFIG = [
-    {
-        "name": "amount_tier",
         "column": "amount",
-        "strategy": "cut",
-        "bins": [float("-inf"), 0, 100, 300, float("inf")],
-        "labels": ["negative", "low", "medium", "high"],
-        "description": "Transaction amount tier: negative / low (<100) / medium / high (>300)",
-    },
-    {
-        "name": "amount_quantile_tier",
-        "column": "amount",
-        "strategy": "qcut",
-        "q": 4,
-        "labels": ["tier_1", "tier_2", "tier_3", "tier_4"],
-        "description": "Amount quartile tier — equal-frequency segments",
-    },
-]
-
-# Composite scores: RFM-style score on amount (monetary component only for now)
-SCORE_CONFIG = [
-    {
-        "name": "amount_score",
-        "components": [
-            {
-                "source": "amount",
-                "q": 5,
-                "labels": [1, 2, 3, 4, 5],
-                "temp_col": "monetary_score",
-            },
-        ],
-        "keep_components": False,
-        "description": "Monetary score 1-5 (quintile rank of transaction amount)",
+        "operations": ["minmax", "zscore", "percentile"],
+        "clip_lower": 0,       # clip negatives before normalising
+        "clip_upper": None,
     },
 ]
 
@@ -132,6 +92,7 @@ if __name__ == "__main__":
             time_series_columns=["date"],
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
+
 
 
         output_results(processed, OUTPUT_FILE)
