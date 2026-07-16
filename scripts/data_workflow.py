@@ -82,8 +82,7 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        # Enforce correct types before any analysis
-        # date: string → datetime  |  amount: currency string → float
+ main
         typed_data, type_report = enforce_types(
             imputed_data,
             date_columns=["date"],
