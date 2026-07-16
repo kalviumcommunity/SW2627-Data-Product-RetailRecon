@@ -4,6 +4,7 @@ import pandas as pd
 
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
+from data_string_cleaning import clean_string_columns, write_string_cleaning_log
 from data_validation import generate_validation_report
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -14,7 +15,22 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
+STRING_CLEANING_LOG = PROJECT_DIR / "output" / "string_cleaning_report.json"
 EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
+
+# ---------------------------------------------------------------------------
+# Column-level string cleaning config
+# Each key is a column name; value is cleaning options for clean_text_column().
+# Extend this dict as the schema grows — no code changes needed elsewhere.
+# ---------------------------------------------------------------------------
+STRING_CLEANING_CONFIG = {
+    # customer_id: strip whitespace only — preserve original casing for IDs
+    "customer_id": {"strip": True, "lowercase": False},
+    # region: strip + lowercase so "North", " NORTH ", "north" all unify
+    "region": {"strip": True, "lowercase": True},
+    # notes: strip + lowercase + remove special characters for safe text export
+    "notes": {"strip": True, "lowercase": True, "remove_special": True},
+}
 
 
 def process_data(df):
@@ -80,7 +96,12 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        processed = process_data(imputed_data)
+        # Normalise string columns before analysis
+        # Strips whitespace, unifies casing, removes special characters
+        cleaned_data, string_report = clean_string_columns(imputed_data, STRING_CLEANING_CONFIG)
+        write_string_cleaning_log(string_report, STRING_CLEANING_LOG)
+
+        processed = process_data(cleaned_data)
 
         output_results(processed, OUTPUT_FILE)
 
