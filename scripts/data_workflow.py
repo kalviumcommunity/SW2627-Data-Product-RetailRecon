@@ -17,6 +17,7 @@ VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
 
 
+
 def process_data(df):
     """
     Clean the dataset.
@@ -90,6 +91,16 @@ if __name__ == "__main__":
             ],
         )
         write_distribution_report(distribution_report, DISTRIBUTION_REPORT)
+
+        # Correlation analysis — always analyse relationships before modelling
+        # Pearson: linear relationships | Spearman: monotonic, robust to outliers
+        correlation_report = run_correlation_analysis(
+            processed,
+            output_dir=PLOTS_DIR,
+            methods=["pearson", "spearman"],
+            strong_threshold=0.7,
+        )
+        write_correlation_report(correlation_report, CORRELATION_REPORT)
 
         output_results(processed, OUTPUT_FILE)
 
