@@ -2,10 +2,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from data_datetime_pipeline import run_datetime_pipeline, write_datetime_pipeline_log
+
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
-from data_validation import generate_validation_report
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -15,8 +14,7 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
-DATETIME_OUTPUT_DIR = PROJECT_DIR / "output"
-EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
+
 
 
 def process_data(df):
@@ -24,16 +22,14 @@ def process_data(df):
     Clean the dataset.
 
     Input:
-        Raw DataFrame
+        Raw DataFrame (post-deduplication)
 
     Returns:
         Clean DataFrame
     """
-
-    # Remove duplicate rows
-    df = df.drop_duplicates()
-
     # Fill missing numerical values with median
+    # Note: duplicate removal is handled explicitly by run_deduplication()
+    # before this step so every removal is logged for audit purposes.
     for col in df.select_dtypes(include="number").columns:
         df[col] = df[col].fillna(df[col].median())
 
@@ -82,19 +78,6 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        # Parse datetime columns, extract temporal features, resample for trends
-        time_data, resampled, datetime_report = run_datetime_pipeline(
-            imputed_data,
-            datetime_columns=["date"],
-            date_format="%Y-%m-%d",
-            feature_column="date",
-            resample_value_column="amount",
-            resample_frequency="W",
-            resample_agg="sum",
-        )
-        write_datetime_pipeline_log(datetime_report, resampled, DATETIME_OUTPUT_DIR)
-
-        processed = process_data(time_data)
 
         output_results(processed, OUTPUT_FILE)
 
