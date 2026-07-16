@@ -4,6 +4,7 @@ import pandas as pd
 
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
+from data_timeseries_rolling import run_timeseries_analysis, write_timeseries_report
 from data_validation import generate_validation_report
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -14,6 +15,8 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
+TIMESERIES_REPORT = PROJECT_DIR / "output" / "timeseries_rolling_report.json"
+PLOTS_DIR = PROJECT_DIR / "output" / "plots"
 EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
 
 
@@ -81,6 +84,20 @@ if __name__ == "__main__":
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
         processed = process_data(imputed_data)
+
+        # Time-series trend and rolling metrics analysis
+        # Rolling averages smooth noise → cumulative sum → resample →
+        # period-over-period change → trend identification
+        processed, ts_report = run_timeseries_analysis(
+            processed,
+            date_col="date",
+            value_col="amount",
+            output_dir=PLOTS_DIR,
+            rolling_windows=[7, 30],
+            resample_freq="W",
+            trend_lookback=3,
+        )
+        write_timeseries_report(ts_report, TIMESERIES_REPORT)
 
         output_results(processed, OUTPUT_FILE)
 
