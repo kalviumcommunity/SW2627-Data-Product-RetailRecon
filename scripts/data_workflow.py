@@ -5,6 +5,7 @@ import pandas as pd
 from data_deduplication import run_deduplication, write_deduplication_log, write_removed_records
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
+from data_type_enforcement import enforce_types, write_type_enforcement_log
 from data_validation import generate_validation_report
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -15,9 +16,7 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
-DEDUP_LOG = PROJECT_DIR / "output" / "deduplication_report.json"
-REMOVED_RECORDS = PROJECT_DIR / "output" / "removed_duplicates_audit.csv"
-EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
+
 
 
 def process_data(df):
@@ -81,17 +80,6 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        # Detect and remove exact and near-duplicates with full audit trail
-        deduped_data, dedup_report, removed_records = run_deduplication(
-            imputed_data,
-            key_columns=["customer_id", "date"],
-            exact_keep="first",
-            near_keep="first",
-        )
-        write_deduplication_log(dedup_report, DEDUP_LOG)
-        write_removed_records(removed_records, REMOVED_RECORDS)
-
-        processed = process_data(deduped_data)
 
         output_results(processed, OUTPUT_FILE)
 
