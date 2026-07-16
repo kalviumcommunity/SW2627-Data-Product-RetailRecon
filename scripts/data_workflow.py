@@ -15,52 +15,6 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
-<
-# ---------------------------------------------------------------------------
-# Segment analysis config — each dict defines one groupby analysis.
-# Never report dataset-wide statistics; always segment first.
-# ---------------------------------------------------------------------------
-SEGMENT_CONFIGS = [
-    # Single-dimension: revenue and transaction metrics by region
-    {
-        "group_by": "region",
-        "agg_config": {
-            "amount": ["sum", "mean", "count"],
-        },
-        "rename_map": {
-            "amount_sum": "total_revenue",
-            "amount_mean": "avg_transaction",
-            "amount_count": "transaction_count",
-        },
-        "rank_by": "total_revenue",
-        "rank_ascending": False,         # highest revenue first
-        "plot_metric": "total_revenue",
-        "transform_col": "amount",       # broadcast regional mean back to rows
-        "transform_func": "mean",
-        # Pivot: region × customer_id to see per-customer contribution per region
-        "pivot": {
-            "row_key": "region",
-            "col_key": "customer_id",
-            "value_col": "amount",
-            "aggfunc": "sum",
-        },
-    },
-    # Single-dimension: average transaction and count by customer
-    {
-        "group_by": "customer_id",
-        "agg_config": {
-            "amount": ["sum", "mean", "count"],
-        },
-        "rename_map": {
-            "amount_sum": "customer_total",
-            "amount_mean": "customer_avg",
-            "amount_count": "customer_transactions",
-        },
-        "rank_by": "customer_total",
-        "rank_ascending": False,
-        "plot_metric": "customer_total",
-    },
-]
 
 
 def process_data(df):
@@ -154,6 +108,20 @@ if __name__ == "__main__":
             output_dir=PLOTS_DIR,
         )
         write_groupby_report(groupby_report, GROUPBY_REPORT)
+
+        # Time-series trend and rolling metrics analysis
+        # Rolling averages smooth noise → cumulative sum → resample →
+        # period-over-period change → trend identification
+        processed, ts_report = run_timeseries_analysis(
+            processed,
+            date_col="date",
+            value_col="amount",
+            output_dir=PLOTS_DIR,
+            rolling_windows=[7, 30],
+            resample_freq="W",
+            trend_lookback=3,
+        )
+        write_timeseries_report(ts_report, TIMESERIES_REPORT)
 
         output_results(processed, OUTPUT_FILE)
 
