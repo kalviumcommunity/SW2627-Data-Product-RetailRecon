@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from data_correlation_analysis import run_correlation_analysis, write_correlation_report
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
 from data_validation import generate_validation_report
@@ -14,6 +15,8 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
+CORRELATION_REPORT = PROJECT_DIR / "output" / "correlation_analysis_report.json"
+PLOTS_DIR = PROJECT_DIR / "output" / "plots"
 EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
 
 
@@ -81,6 +84,16 @@ if __name__ == "__main__":
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
         processed = process_data(imputed_data)
+
+        # Correlation analysis — always analyse relationships before modelling
+        # Pearson: linear relationships | Spearman: monotonic, robust to outliers
+        correlation_report = run_correlation_analysis(
+            processed,
+            output_dir=PLOTS_DIR,
+            methods=["pearson", "spearman"],
+            strong_threshold=0.7,
+        )
+        write_correlation_report(correlation_report, CORRELATION_REPORT)
 
         output_results(processed, OUTPUT_FILE)
 
