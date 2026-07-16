@@ -2,10 +2,10 @@ from pathlib import Path
 
 import pandas as pd
 
+
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
-from data_outlier_detection import run_outlier_detection, write_outlier_report
-from data_validation import generate_validation_report
+
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -15,8 +15,6 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
-OUTLIER_REPORT = PROJECT_DIR / "output" / "outlier_detection_report.json"
-EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
 
 # ---------------------------------------------------------------------------
 # Per-column outlier detection config.
@@ -42,16 +40,14 @@ def process_data(df):
     Clean the dataset.
 
     Input:
-        Raw DataFrame
+        Raw DataFrame (post-deduplication)
 
     Returns:
         Clean DataFrame
     """
-
-    # Remove duplicate rows
-    df = df.drop_duplicates()
-
     # Fill missing numerical values with median
+    # Note: duplicate removal is handled explicitly by run_deduplication()
+    # before this step so every removal is logged for audit purposes.
     for col in df.select_dtypes(include="number").columns:
         df[col] = df[col].fillna(df[col].median())
 
@@ -100,11 +96,6 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        # Detect and handle outliers — cap, remove, or flag per column config
-        clean_data, outlier_report = run_outlier_detection(imputed_data, OUTLIER_CONFIG)
-        write_outlier_report(outlier_report, OUTLIER_REPORT)
-
-        processed = process_data(clean_data)
 
         output_results(processed, OUTPUT_FILE)
 
