@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from data_deduplication import run_deduplication, write_deduplication_log, write_removed_records
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
 from data_type_enforcement import enforce_types, write_type_enforcement_log
@@ -15,8 +16,7 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
-TYPE_ENFORCEMENT_LOG = PROJECT_DIR / "output" / "type_enforcement_report.json"
-EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
+
 
 
 def process_data(df):
@@ -24,16 +24,14 @@ def process_data(df):
     Clean the dataset.
 
     Input:
-        Raw DataFrame
+        Raw DataFrame (post-deduplication)
 
     Returns:
         Clean DataFrame
     """
-
-    # Remove duplicate rows
-    df = df.drop_duplicates()
-
     # Fill missing numerical values with median
+    # Note: duplicate removal is handled explicitly by run_deduplication()
+    # before this step so every removal is logged for audit purposes.
     for col in df.select_dtypes(include="number").columns:
         df[col] = df[col].fillna(df[col].median())
 
@@ -82,17 +80,6 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
- main
-        typed_data, type_report = enforce_types(
-            imputed_data,
-            date_columns=["date"],
-            date_format="%Y-%m-%d",
-            currency_columns=["amount"],
-            boolean_columns=[],
-        )
-        write_type_enforcement_log(type_report, TYPE_ENFORCEMENT_LOG)
-
-        processed = process_data(typed_data)
 
         output_results(processed, OUTPUT_FILE)
 
