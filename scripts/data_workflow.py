@@ -5,6 +5,10 @@ import pandas as pd
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
 from data_validation import generate_validation_report
+from data_vectorised_computation import (
+    run_vectorised_computation,
+    write_vectorised_computation_log,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -14,7 +18,22 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
+VECTORISED_REPORT = PROJECT_DIR / "output" / "vectorised_computation_report.json"
 EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
+
+# ---------------------------------------------------------------------------
+# Vectorised computation config — one dict per column.
+# operations: any combination of "minmax", "zscore", "percentile"
+# clip_lower / clip_upper: optional pre-normalisation bounds
+# ---------------------------------------------------------------------------
+VECTORISED_CONFIG = [
+    {
+        "column": "amount",
+        "operations": ["minmax", "zscore", "percentile"],
+        "clip_lower": 0,       # clip negatives before normalising
+        "clip_upper": None,
+    },
+]
 
 
 def process_data(df):
@@ -80,7 +99,16 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        processed = process_data(imputed_data)
+        # Apply NumPy vectorised normalisation — minmax, z-score, percentile rank
+        # Also benchmarks loop vs vectorised to make the speedup measurable
+        vectorised_data, vec_report = run_vectorised_computation(
+            imputed_data,
+            VECTORISED_CONFIG,
+            run_benchmark=True,
+        )
+        write_vectorised_computation_log(vec_report, VECTORISED_REPORT)
+
+        processed = process_data(vectorised_data)
 
         output_results(processed, OUTPUT_FILE)
 
