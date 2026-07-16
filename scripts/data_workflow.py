@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from data_datetime_pipeline import run_datetime_pipeline, write_datetime_pipeline_log
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
 from data_validation import generate_validation_report
@@ -14,6 +15,7 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
+DATETIME_OUTPUT_DIR = PROJECT_DIR / "output"
 EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
 
 
@@ -80,7 +82,19 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        processed = process_data(imputed_data)
+        # Parse datetime columns, extract temporal features, resample for trends
+        time_data, resampled, datetime_report = run_datetime_pipeline(
+            imputed_data,
+            datetime_columns=["date"],
+            date_format="%Y-%m-%d",
+            feature_column="date",
+            resample_value_column="amount",
+            resample_frequency="W",
+            resample_agg="sum",
+        )
+        write_datetime_pipeline_log(datetime_report, resampled, DATETIME_OUTPUT_DIR)
+
+        processed = process_data(time_data)
 
         output_results(processed, OUTPUT_FILE)
 
