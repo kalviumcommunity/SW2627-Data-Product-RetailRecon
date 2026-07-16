@@ -82,7 +82,7 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        # Enforce correct data types before any analysis
+ main
         typed_data, type_report = enforce_types(
             imputed_data,
             date_columns=["date"],
