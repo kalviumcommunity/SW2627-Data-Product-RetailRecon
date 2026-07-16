@@ -16,23 +16,54 @@ OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
 
+
 # ---------------------------------------------------------------------------
-# Per-column outlier detection config.
-# method : 'zscore' or 'iqr'
-# action : 'cap', 'remove', or 'flag'
-# reason : business justification recorded in the audit log
+# Validation rules — one dict per rule, applied in order.
+# Extend this list as the schema grows; no changes needed elsewhere.
 # ---------------------------------------------------------------------------
-OUTLIER_CONFIG = {
-    "amount": {
-        "method": "iqr",
-        "action": "cap",
-        "factor": 1.5,
-        "reason": (
-            "Transaction amounts outside IQR boundary are capped to bound "
-            "their influence on revenue statistics while preserving all rows."
-        ),
+VALIDATION_RULES = [
+    # Null constraint — customer_id must never be empty
+    {
+        "name": "valid_customer_id",
+        "type": "not_null",
+        "column": "customer_id",
+        "description": "customer_id must not be null (critical identifier)",
     },
-}
+    # Range check — amount must be non-negative
+    {
+        "name": "valid_amount_range",
+        "type": "range",
+        "column": "amount",
+        "min_value": 0,
+        "description": "Transaction amount must be >= 0 (negative amounts are invalid)",
+    },
+    # Range check — amount must be below a reasonable ceiling
+    {
+        "name": "valid_amount_ceiling",
+        "type": "range",
+        "column": "amount",
+        "max_value": 1_000_000,
+        "description": "Transaction amount must be <= 1,000,000 (catches data entry errors)",
+    },
+    # Format check — customer_id must follow pattern C + digits (e.g. C001)
+    {
+        "name": "valid_customer_id_format",
+        "type": "format",
+        "column": "customer_id",
+        "pattern": r"^C\d+$",
+        "description": "customer_id must match pattern C<digits> (e.g. C001, C123)",
+    },
+    # Business rule — date must not be in the future
+    {
+        "name": "valid_date_not_future",
+        "type": "business",
+        "rule_func": lambda df: (
+            pd.to_datetime(df["date"], errors="coerce") <= pd.Timestamp.now()
+            if "date" in df.columns else pd.Series(True, index=df.index)
+        ),
+        "description": "Transaction date must not be in the future",
+    },
+]
 
 
 def process_data(df):
@@ -95,6 +126,7 @@ if __name__ == "__main__":
             time_series_columns=["date"],
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
+
 
 
         output_results(processed, OUTPUT_FILE)
