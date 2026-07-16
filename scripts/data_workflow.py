@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from data_feature_engineering import run_feature_engineering, write_feature_engineering_log
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
 from data_validation import generate_validation_report
@@ -14,7 +15,62 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
+FEATURE_REPORT = PROJECT_DIR / "output" / "feature_engineering_report.json"
 EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
+
+# ---------------------------------------------------------------------------
+# Feature engineering config — extend as the dataset grows.
+# Ratios are created first so binning can reference them.
+# ---------------------------------------------------------------------------
+
+# Ratio features: normalise amount by days as a spend-rate proxy
+RATIO_CONFIG = [
+    {
+        "name": "amount_per_day",
+        "numerator": "amount",
+        "denominator": lambda df: (
+            (pd.Timestamp.now() - pd.to_datetime(df["date"], errors="coerce")).dt.days
+        ),
+        "description": "Transaction amount normalised by days since date (spend rate proxy)",
+    },
+]
+
+# Binned features: segment customers by spend tier
+BIN_CONFIG = [
+    {
+        "name": "amount_tier",
+        "column": "amount",
+        "strategy": "cut",
+        "bins": [float("-inf"), 0, 100, 300, float("inf")],
+        "labels": ["negative", "low", "medium", "high"],
+        "description": "Transaction amount tier: negative / low (<100) / medium / high (>300)",
+    },
+    {
+        "name": "amount_quantile_tier",
+        "column": "amount",
+        "strategy": "qcut",
+        "q": 4,
+        "labels": ["tier_1", "tier_2", "tier_3", "tier_4"],
+        "description": "Amount quartile tier — equal-frequency segments",
+    },
+]
+
+# Composite scores: RFM-style score on amount (monetary component only for now)
+SCORE_CONFIG = [
+    {
+        "name": "amount_score",
+        "components": [
+            {
+                "source": "amount",
+                "q": 5,
+                "labels": [1, 2, 3, 4, 5],
+                "temp_col": "monetary_score",
+            },
+        ],
+        "keep_components": False,
+        "description": "Monetary score 1-5 (quintile rank of transaction amount)",
+    },
+]
 
 
 def process_data(df):
@@ -80,7 +136,16 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        processed = process_data(imputed_data)
+        # Engineer derived business features: ratios → bins → composite scores
+        engineered_data, feature_report = run_feature_engineering(
+            imputed_data,
+            ratio_config=RATIO_CONFIG,
+            bin_config=BIN_CONFIG,
+            score_config=SCORE_CONFIG,
+        )
+        write_feature_engineering_log(feature_report, FEATURE_REPORT)
+
+        processed = process_data(engineered_data)
 
         output_results(processed, OUTPUT_FILE)
 
