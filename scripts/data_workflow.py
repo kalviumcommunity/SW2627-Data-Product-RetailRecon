@@ -4,6 +4,7 @@ import pandas as pd
 
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
+from data_outlier_detection import run_outlier_detection, write_outlier_report
 from data_validation import generate_validation_report
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -14,7 +15,26 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
+OUTLIER_REPORT = PROJECT_DIR / "output" / "outlier_detection_report.json"
 EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
+
+# ---------------------------------------------------------------------------
+# Per-column outlier detection config.
+# method : 'zscore' or 'iqr'
+# action : 'cap', 'remove', or 'flag'
+# reason : business justification recorded in the audit log
+# ---------------------------------------------------------------------------
+OUTLIER_CONFIG = {
+    "amount": {
+        "method": "iqr",
+        "action": "cap",
+        "factor": 1.5,
+        "reason": (
+            "Transaction amounts outside IQR boundary are capped to bound "
+            "their influence on revenue statistics while preserving all rows."
+        ),
+    },
+}
 
 
 def process_data(df):
@@ -80,7 +100,11 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        processed = process_data(imputed_data)
+        # Detect and handle outliers — cap, remove, or flag per column config
+        clean_data, outlier_report = run_outlier_detection(imputed_data, OUTLIER_CONFIG)
+        write_outlier_report(outlier_report, OUTLIER_REPORT)
+
+        processed = process_data(clean_data)
 
         output_results(processed, OUTPUT_FILE)
 
