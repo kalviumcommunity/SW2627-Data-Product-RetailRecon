@@ -2,10 +2,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from data_feature_engineering import run_feature_engineering, write_feature_engineering_log
+
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
-from data_validation import generate_validation_report
+
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -15,8 +15,7 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
-FEATURE_REPORT = PROJECT_DIR / "output" / "feature_engineering_report.json"
-EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
+
 
 # ---------------------------------------------------------------------------
 # Feature engineering config — extend as the dataset grows.
@@ -78,16 +77,14 @@ def process_data(df):
     Clean the dataset.
 
     Input:
-        Raw DataFrame
+        Raw DataFrame (post-deduplication)
 
     Returns:
         Clean DataFrame
     """
-
-    # Remove duplicate rows
-    df = df.drop_duplicates()
-
     # Fill missing numerical values with median
+    # Note: duplicate removal is handled explicitly by run_deduplication()
+    # before this step so every removal is logged for audit purposes.
     for col in df.select_dtypes(include="number").columns:
         df[col] = df[col].fillna(df[col].median())
 
@@ -136,16 +133,6 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        # Engineer derived business features: ratios → bins → composite scores
-        engineered_data, feature_report = run_feature_engineering(
-            imputed_data,
-            ratio_config=RATIO_CONFIG,
-            bin_config=BIN_CONFIG,
-            score_config=SCORE_CONFIG,
-        )
-        write_feature_engineering_log(feature_report, FEATURE_REPORT)
-
-        processed = process_data(engineered_data)
 
         output_results(processed, OUTPUT_FILE)
 
