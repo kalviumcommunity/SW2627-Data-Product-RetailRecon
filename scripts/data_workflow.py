@@ -17,21 +17,6 @@ VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
 
 
-# ---------------------------------------------------------------------------
-# Vectorised computation config — one dict per column.
-# operations: any combination of "minmax", "zscore", "percentile"
-# clip_lower / clip_upper: optional pre-normalisation bounds
-# ---------------------------------------------------------------------------
-VECTORISED_CONFIG = [
-    {
-        "column": "amount",
-        "operations": ["minmax", "zscore", "percentile"],
-        "clip_lower": 0,       # clip negatives before normalising
-        "clip_upper": None,
-    },
-]
-
-
 def process_data(df):
     """
     Clean the dataset.
@@ -94,6 +79,17 @@ if __name__ == "__main__":
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
 
+
+        # Analyse distributions after cleaning — always visualise before reporting
+        distribution_report = run_distribution_analysis(
+            processed,
+            columns=["amount"],
+            output_dir=PLOTS_DIR,
+            segment_comparisons=[
+                {"column": "amount", "segment_column": "region"},
+            ],
+        )
+        write_distribution_report(distribution_report, DISTRIBUTION_REPORT)
 
         output_results(processed, OUTPUT_FILE)
 
