@@ -6,6 +6,7 @@ import pandas as pd
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
 
+
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
 
@@ -15,6 +16,23 @@ OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
 
+# ---------------------------------------------------------------------------
+# Per-column outlier detection config.
+# method : 'zscore' or 'iqr'
+# action : 'cap', 'remove', or 'flag'
+# reason : business justification recorded in the audit log
+# ---------------------------------------------------------------------------
+OUTLIER_CONFIG = {
+    "amount": {
+        "method": "iqr",
+        "action": "cap",
+        "factor": 1.5,
+        "reason": (
+            "Transaction amounts outside IQR boundary are capped to bound "
+            "their influence on revenue statistics while preserving all rows."
+        ),
+    },
+}
 
 
 def process_data(df):
