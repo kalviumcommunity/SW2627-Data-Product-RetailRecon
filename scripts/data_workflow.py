@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from data_deduplication import run_deduplication, write_deduplication_log, write_removed_records
+
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
 
@@ -15,20 +15,6 @@ OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
 
-
-# ---------------------------------------------------------------------------
-# Column-level string cleaning config
-# Each key is a column name; value is cleaning options for clean_text_column().
-# Extend this dict as the schema grows — no code changes needed elsewhere.
-# ---------------------------------------------------------------------------
-STRING_CLEANING_CONFIG = {
-    # customer_id: strip whitespace only — preserve original casing for IDs
-    "customer_id": {"strip": True, "lowercase": False},
-    # region: strip + lowercase so "North", " NORTH ", "north" all unify
-    "region": {"strip": True, "lowercase": True},
-    # notes: strip + lowercase + remove special characters for safe text export
-    "notes": {"strip": True, "lowercase": True, "remove_special": True},
-}
 
 
 def process_data(df):
