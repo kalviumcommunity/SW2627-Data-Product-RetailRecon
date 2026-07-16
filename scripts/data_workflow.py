@@ -2,10 +2,9 @@ from pathlib import Path
 
 import pandas as pd
 
+from data_deduplication import run_deduplication, write_deduplication_log, write_removed_records
 from data_ingestion import document_ingestion, ingest_data
 from data_imputation import impute_missing_values, write_imputation_log
-from data_string_cleaning import clean_string_columns, write_string_cleaning_log
-from data_validation import generate_validation_report
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -15,8 +14,7 @@ INPUT_FILE = PROJECT_DIR / "data" / "raw" / "sample.csv"
 OUTPUT_FILE = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 IMPUTATION_LOG = PROJECT_DIR / "output" / "imputation_report.json"
-STRING_CLEANING_LOG = PROJECT_DIR / "output" / "string_cleaning_report.json"
-EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
+
 
 # ---------------------------------------------------------------------------
 # Column-level string cleaning config
@@ -38,16 +36,14 @@ def process_data(df):
     Clean the dataset.
 
     Input:
-        Raw DataFrame
+        Raw DataFrame (post-deduplication)
 
     Returns:
         Clean DataFrame
     """
-
-    # Remove duplicate rows
-    df = df.drop_duplicates()
-
     # Fill missing numerical values with median
+    # Note: duplicate removal is handled explicitly by run_deduplication()
+    # before this step so every removal is logged for audit purposes.
     for col in df.select_dtypes(include="number").columns:
         df[col] = df[col].fillna(df[col].median())
 
@@ -96,12 +92,6 @@ if __name__ == "__main__":
         )
         write_imputation_log(imputation_report, IMPUTATION_LOG)
 
-        # Normalise string columns before analysis
-        # Strips whitespace, unifies casing, removes special characters
-        cleaned_data, string_report = clean_string_columns(imputed_data, STRING_CLEANING_CONFIG)
-        write_string_cleaning_log(string_report, STRING_CLEANING_LOG)
-
-        processed = process_data(cleaned_data)
 
         output_results(processed, OUTPUT_FILE)
 
