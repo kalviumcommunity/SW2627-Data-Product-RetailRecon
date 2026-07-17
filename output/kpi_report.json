@@ -1,0 +1,158 @@
+{
+  "timestamp": "2026-07-17T13:27:51.469232",
+  "kpis_computed": 6,
+  "on_target": 3,
+  "out_of_range": 3,
+  "results": [
+    {
+      "key": "mau",
+      "name": "Monthly Active Users (MAU)",
+      "value": 32.0,
+      "target_min": 500,
+      "target_max": 10000,
+      "unit": "users",
+      "status": "OUT_OF_RANGE",
+      "deviation": -468.0,
+      "owner": "Product Lead"
+    },
+    {
+      "key": "revenue_growth",
+      "name": "Revenue Growth Rate (MoM)",
+      "value": -64.51,
+      "target_min": 0.0,
+      "target_max": 50.0,
+      "unit": "%",
+      "status": "OUT_OF_RANGE",
+      "deviation": -64.51,
+      "owner": "Finance"
+    },
+    {
+      "key": "rpc",
+      "name": "Revenue per Customer",
+      "value": 1078.51,
+      "target_min": 50.0,
+      "target_max": 500.0,
+      "unit": "$",
+      "status": "OUT_OF_RANGE",
+      "deviation": 578.51,
+      "owner": "Finance"
+    },
+    {
+      "key": "aov",
+      "name": "Average Order Value (AOV)",
+      "value": 204.92,
+      "target_min": 20.0,
+      "target_max": 300.0,
+      "unit": "$",
+      "status": "ON_TARGET",
+      "deviation": 0.0,
+      "owner": "Sales"
+    },
+    {
+      "key": "hv_customer_rate",
+      "name": "High-Value Customer Rate",
+      "value": 21.05,
+      "target_min": 15.0,
+      "target_max": 30.0,
+      "unit": "%",
+      "status": "ON_TARGET",
+      "deviation": 0.0,
+      "owner": "Marketing"
+    },
+    {
+      "key": "txn_freq",
+      "name": "Transaction Frequency",
+      "value": 5.26,
+      "target_min": 1.5,
+      "target_max": 20.0,
+      "unit": "txns/customer",
+      "status": "ON_TARGET",
+      "deviation": 0.0,
+      "owner": "Product Lead"
+    }
+  ],
+  "definitions": {
+    "mau": {
+      "name": "Monthly Active Users (MAU)",
+      "formula": "COUNT(DISTINCT customer_id) WHERE date >= TODAY() - 30 days",
+      "data_source_cols": [
+        "customer_id",
+        "date"
+      ],
+      "target_min": 500,
+      "target_max": 10000,
+      "owner": "Product Lead",
+      "update_frequency": "Daily",
+      "unit": "users",
+      "notes": "Indicator of product engagement. Seasonal dips expected in Q4."
+    },
+    "rpc": {
+      "name": "Revenue per Customer",
+      "formula": "SUM(amount) / COUNT(DISTINCT customer_id)",
+      "data_source_cols": [
+        "amount",
+        "customer_id"
+      ],
+      "target_min": 50.0,
+      "target_max": 500.0,
+      "owner": "Finance",
+      "update_frequency": "Monthly",
+      "unit": "$",
+      "notes": "Measures sustainable revenue per relationship. Excludes refunds."
+    },
+    "aov": {
+      "name": "Average Order Value (AOV)",
+      "formula": "SUM(amount) / COUNT(transactions)",
+      "data_source_cols": [
+        "amount"
+      ],
+      "target_min": 20.0,
+      "target_max": 300.0,
+      "owner": "Sales",
+      "update_frequency": "Weekly",
+      "unit": "$",
+      "notes": "Low AOV may indicate discount overuse or cart abandonment."
+    },
+    "txn_freq": {
+      "name": "Transaction Frequency",
+      "formula": "COUNT(transactions) / COUNT(DISTINCT customer_id)",
+      "data_source_cols": [
+        "customer_id"
+      ],
+      "target_min": 1.5,
+      "target_max": 20.0,
+      "owner": "Product Lead",
+      "update_frequency": "Monthly",
+      "unit": "txns/customer",
+      "notes": "Higher frequency signals stronger retention. Track by cohort."
+    },
+    "revenue_growth": {
+      "name": "Revenue Growth Rate (MoM)",
+      "formula": "(revenue_this_month - revenue_last_month) / revenue_last_month * 100",
+      "data_source_cols": [
+        "amount",
+        "date"
+      ],
+      "target_min": 0.0,
+      "target_max": 50.0,
+      "owner": "Finance",
+      "update_frequency": "Monthly",
+      "unit": "%",
+      "notes": "Month-over-month. Negative values flag revenue contraction."
+    },
+    "hv_customer_rate": {
+      "name": "High-Value Customer Rate",
+      "formula": "COUNT(customers >= 80th percentile spend) / COUNT(DISTINCT customers) * 100",
+      "data_source_cols": [
+        "amount",
+        "customer_id"
+      ],
+      "target_min": 15.0,
+      "target_max": 30.0,
+      "owner": "Marketing",
+      "update_frequency": "Monthly",
+      "unit": "%",
+      "notes": "Tracks concentration risk. If >30%, revenue is too dependent on few customers."
+    }
+  }
+}

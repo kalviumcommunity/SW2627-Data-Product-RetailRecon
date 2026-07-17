@@ -6,6 +6,7 @@ from data_ingestion import document_ingestion, ingest_data
 from data_type_enforcement import enforce_types, generate_type_report
 from data_validation import generate_validation_report
 from funnel_analysis import run_funnel_analysis
+from kpi_metrics import run_kpi_analysis
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -18,6 +19,7 @@ OUTPUT_FILE       = PROJECT_DIR / "output" / "processed.csv"
 VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 TYPE_REPORT       = PROJECT_DIR / "output" / "type_enforcement_report.json"
 FUNNEL_REPORT     = PROJECT_DIR / "output" / "funnel_report.json"
+KPI_REPORT        = PROJECT_DIR / "output" / "kpi_report.json"
 PLOTS_DIR         = PROJECT_DIR / "output"
 
 EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
@@ -112,7 +114,23 @@ if __name__ == "__main__":
             print(f"\n⚠ Funnel analysis skipped — columns not found: {missing}")
             print("  Update FUNNEL_STAGES in data_workflow.py to match your dataset columns.")
 
-        # Step 6: Output
+        # Step 6: KPI analysis — always runs when date/amount/customer columns are present
+        kpi_cols = {"date", "amount", "customer_id"}
+        if kpi_cols.issubset(set(processed.columns)):
+            run_kpi_analysis(
+                processed,
+                date_col="date",
+                amount_col="amount",
+                customer_col="customer_id",
+                output_dir=PLOTS_DIR,
+                report_path=KPI_REPORT,
+                save_plots=True,
+            )
+        else:
+            missing = kpi_cols - set(processed.columns)
+            print(f"\n⚠ KPI analysis skipped — columns not found: {missing}")
+
+        # Step 7: Output
         output_results(processed, OUTPUT_FILE)
 
         print("✓ Workflow completed successfully")
