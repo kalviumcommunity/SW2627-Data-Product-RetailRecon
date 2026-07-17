@@ -1,0 +1,86 @@
+{
+  "timestamp": "2026-07-17T13:32:35.793638",
+  "metric_analysed": "amount",
+  "anomaly_window": {
+    "freq": "D",
+    "threshold": 135.3155,
+    "anomaly_periods": [
+      "2024-02-14 00:00:00"
+    ],
+    "worst_period": "2024-02-14 00:00:00"
+  },
+  "segment_correlations": {
+    "region": [
+      {
+        "segment_value": "East",
+        "during_anomaly": 0.0,
+        "outside_anomaly": 230.90583941605837,
+        "absolute_diff": -230.90583941605837,
+        "relative_diff_%": -100.0
+      },
+      {
+        "segment_value": "North",
+        "during_anomaly": 0.0,
+        "outside_anomaly": 226.70603053435116,
+        "absolute_diff": -226.70603053435116,
+        "relative_diff_%": -100.0
+      },
+      {
+        "segment_value": "West",
+        "during_anomaly": 0.0,
+        "outside_anomaly": 222.4825,
+        "absolute_diff": -222.4825,
+        "relative_diff_%": -100.0
+      },
+      {
+        "segment_value": "South",
+        "during_anomaly": 0.0,
+        "outside_anomaly": 217.19346153846152,
+        "absolute_diff": -217.19346153846152,
+        "relative_diff_%": -100.0
+      }
+    ],
+    "payment_method": [
+      {
+        "segment_value": "crypto",
+        "during_anomaly": 0.0,
+        "outside_anomaly": 231.20125000000002,
+        "absolute_diff": -231.20125000000002,
+        "relative_diff_%": -100.0
+      },
+      {
+        "segment_value": "credit_card",
+        "during_anomaly": 0.0,
+        "outside_anomaly": 225.23775590551182,
+        "absolute_diff": -225.23775590551182,
+        "relative_diff_%": -100.0
+      },
+      {
+        "segment_value": "debit",
+        "during_anomaly": 0.0,
+        "outside_anomaly": 219.3179577464789,
+        "absolute_diff": -219.3179577464789,
+        "relative_diff_%": -100.0
+      }
+    ]
+  },
+  "hypothesis": {
+    "observation": "Revenue dropped sharply on days 45-47.",
+    "narrowed_time": "Days 45-47 (2024-02-14 to 2024-02-16) showed near-zero average transaction values.",
+    "narrowed_segment": "North region + credit_card payment method \u2014 average amount dropped >95%.",
+    "correlated_patterns": [
+      "Drop correlates with time window days 45-47.",
+      "Drop correlates with region = North.",
+      "Drop correlates with payment_method = credit_card.",
+      "Debit and crypto transactions unaffected in same period."
+    ],
+    "root_cause": "Payment processor outage for credit card transactions in the North region during days 45-47.",
+    "supporting_evidence": [
+      "Credit card avg amount: ~2 vs normal ~200 during window.",
+      "Debit/crypto avg amount unchanged.",
+      "North region most affected; South/East/West unaffected.",
+      "Anomaly fully contained within 3-day window."
+    ],
+    "recommended_action": "Add redundant payment processor for credit cards with automatic failover."
+  }
+}

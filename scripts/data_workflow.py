@@ -7,6 +7,7 @@ from data_type_enforcement import enforce_types, generate_type_report
 from data_validation import generate_validation_report
 from funnel_analysis import run_funnel_analysis
 from kpi_metrics import run_kpi_analysis
+from root_cause_analysis import build_hypothesis, run_rca
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -20,6 +21,7 @@ VALIDATION_REPORT = PROJECT_DIR / "output" / "intake_report.json"
 TYPE_REPORT       = PROJECT_DIR / "output" / "type_enforcement_report.json"
 FUNNEL_REPORT     = PROJECT_DIR / "output" / "funnel_report.json"
 KPI_REPORT        = PROJECT_DIR / "output" / "kpi_report.json"
+RCA_REPORT        = PROJECT_DIR / "output" / "rca_report.json"
 PLOTS_DIR         = PROJECT_DIR / "output"
 
 EXPECTED_COLUMNS = ["customer_id", "amount", "date"]
@@ -130,7 +132,42 @@ if __name__ == "__main__":
             missing = kpi_cols - set(processed.columns)
             print(f"\n⚠ KPI analysis skipped — columns not found: {missing}")
 
-        # Step 7: Output
+        # Step 7: Root cause analysis — triggered when a metric anomaly needs investigation.
+        # The hypothesis below is a template; the analyst fills it in after reviewing
+        # the timeline and segment charts produced in this step.
+        rca_cols = {"date", "amount"}
+        if rca_cols.issubset(set(processed.columns)):
+            rca_hypothesis = build_hypothesis(
+                observation="Revenue anomaly detected — investigating root cause.",
+                narrowed_time="See rca_timeline.png for the exact anomaly window.",
+                narrowed_segment="See rca_segment_*.png charts for segment breakdown.",
+                correlated_patterns=[
+                    "Review charts and update this list with correlated dimensions.",
+                ],
+                root_cause="Hypothesis pending analyst review of charts and evidence.",
+                supporting_evidence=[
+                    "Review segment comparison charts and update this list.",
+                ],
+                recommended_action="Update after identifying the confirmed root cause.",
+            )
+            segment_cols = [c for c in ["region", "payment_method", "customer_id"]
+                            if c in processed.columns]
+            run_rca(
+                processed,
+                metric_col="amount",
+                segment_cols=segment_cols,
+                hypothesis=rca_hypothesis,
+                date_col="date",
+                freq="D",
+                output_dir=PLOTS_DIR,
+                report_path=RCA_REPORT,
+                save_plots=True,
+            )
+        else:
+            missing = rca_cols - set(processed.columns)
+            print(f"\n⚠ RCA skipped — columns not found: {missing}")
+
+        # Step 8: Output
         output_results(processed, OUTPUT_FILE)
 
         print("✓ Workflow completed successfully")
