@@ -90,12 +90,11 @@ def enforce_currency(
     before_dtype = str(df[column].dtype)
     df = df.copy()
 
-    # Work on string representation regardless of incoming dtype
     cleaned = df[column].astype(str).str.replace(strip_pattern, "", regex=True).str.strip()
     converted = pd.to_numeric(cleaned, errors="coerce")
 
     coerced_count = int(converted.isnull().sum() - df[column].isnull().sum())
-    coerced_count = max(coerced_count, 0)  # guard against NaN already present
+    coerced_count = max(coerced_count, 0)
 
     df[column] = converted
     after_dtype = str(df[column].dtype)
@@ -148,14 +147,12 @@ def enforce_boolean(
     before_dtype = str(df[column].dtype)
     df = df.copy()
 
-    # Normalise strings to lowercase before mapping
     series = df[column].copy()
     if series.dtype == object:
         series = series.str.lower().str.strip()
 
     mapped = series.map(active_mapping)
 
-    # Detect values that did not match any mapping key
     unmatched_mask = mapped.isnull() & series.notnull()
     if unmatched_mask.any():
         bad_vals = series[unmatched_mask].unique().tolist()
@@ -171,7 +168,7 @@ def enforce_boolean(
     log: dict[str, Any] = {
         "column": column,
         "conversion": "integer/string → boolean",
-        "mapping_keys": list(str(k) for k in active_mapping.keys()),
+        "mapping_keys": [str(k) for k in active_mapping.keys()],
         "before_dtype": before_dtype,
         "after_dtype": after_dtype,
         "status": "success",
@@ -190,7 +187,6 @@ def compare_dtypes(
     """Return a column-by-column dtype diff between two DataFrames.
 
     Only columns where the dtype changed are included in the output.
-    Useful for validating that all intended conversions actually took effect.
     """
     changes: dict[str, dict[str, str]] = {}
     for col in before.columns:
@@ -202,7 +198,7 @@ def compare_dtypes(
 
 
 # ---------------------------------------------------------------------------
-# Batch enforcement + report
+# Batch enforcement
 # ---------------------------------------------------------------------------
 
 def enforce_types(
@@ -214,24 +210,10 @@ def enforce_types(
     Args:
         df:       Raw DataFrame.
         type_map: Dict mapping column name → conversion spec.
-                  Each spec must have a 'type' key with one of:
-                  'datetime', 'currency', 'boolean'.
-                  Additional keys are passed as kwargs to the relevant function.
-
-                  Example::
-
-                      {
-                          "transaction_date": {"type": "datetime", "fmt": "%Y-%m-%d"},
-                          "amount":           {"type": "currency"},
-                          "is_active":        {"type": "boolean"},
-                      }
+                  Each spec must have a 'type' key: 'datetime', 'currency', or 'boolean'.
 
     Returns:
         (converted DataFrame, list of per-column conversion logs)
-
-    Raises:
-        ValueError: Unknown 'type' value in the type_map.
-        KeyError / ValueError: Propagated from individual conversion functions.
     """
     logs: list[dict[str, Any]] = []
     result = df.copy()
@@ -289,17 +271,7 @@ def generate_type_report(
     conversion_logs: list[dict[str, Any]],
     report_path: str | Path = Path("../output/type_enforcement_report.json"),
 ) -> dict[str, Any]:
-    """Write a structured JSON report summarising all type conversions.
-
-    Args:
-        df_before:       DataFrame before enforcement (for dtype snapshot).
-        df_after:        DataFrame after enforcement (for dtype snapshot).
-        conversion_logs: Logs returned by enforce_types.
-        report_path:     Where to save the JSON report.
-
-    Returns:
-        The report dict.
-    """
+    """Write a structured JSON report summarising all type conversions."""
     dtype_diff = compare_dtypes(df_before, df_after)
 
     report: dict[str, Any] = {

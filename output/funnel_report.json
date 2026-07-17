@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-07-17T13:16:05.313169",
+  "overall_conversion_%": 20.0,
+  "revenue_per_user": 150.0,
+  "stages": {
+    "Sign Up": 10000,
+    "Email Entered": 8000,
+    "Password Created": 6000,
+    "Email Verified": 5000,
+    "Payment Added": 4000,
+    "First Purchase": 2000
+  },
+  "dropoff_transitions": [
+    {
+      "from_stage": "Payment Added",
+      "to_stage": "First Purchase",
+      "users_at_from": 4000,
+      "users_at_to": 2000,
+      "users_lost": 2000,
+      "drop_rate_%": 50.0,
+      "completion_rate_%": 50.0,
+      "revenue_lost_total": 300000.0,
+      "revenue_if_50pct_fix": 150000.0
+    },
+    {
+      "from_stage": "Email Entered",
+      "to_stage": "Password Created",
+      "users_at_from": 8000,
+      "users_at_to": 6000,
+      "users_lost": 2000,
+      "drop_rate_%": 25.0,
+      "completion_rate_%": 75.0,
+      "revenue_lost_total": 300000.0,
+      "revenue_if_50pct_fix": 150000.0
+    },
+    {
+      "from_stage": "Sign Up",
+      "to_stage": "Email Entered",
+      "users_at_from": 10000,
+      "users_at_to": 8000,
+      "users_lost": 2000,
+      "drop_rate_%": 20.0,
+      "completion_rate_%": 80.0,
+      "revenue_lost_total": 300000.0,
+      "revenue_if_50pct_fix": 150000.0
+    },
+    {
+      "from_stage": "Email Verified",
+      "to_stage": "Payment Added",
+      "users_at_from": 5000,
+      "users_at_to": 4000,
+      "users_lost": 1000,
+      "drop_rate_%": 20.0,
+      "completion_rate_%": 80.0,
+      "revenue_lost_total": 150000.0,
+      "revenue_if_50pct_fix": 75000.0
+    },
+    {
+      "from_stage": "Password Created",
+      "to_stage": "Email Verified",
+      "users_at_from": 6000,
+      "users_at_to": 5000,
+      "users_lost": 1000,
+      "drop_rate_%": 16.7,
+      "completion_rate_%": 83.3,
+      "revenue_lost_total": 150000.0,
+      "revenue_if_50pct_fix": 75000.0
+    }
+  ],
+  "biggest_leak": {
+    "from_stage": "Payment Added",
+    "to_stage": "First Purchase",
+    "users_at_from": 4000,
+    "users_at_to": 2000,
+    "users_lost": 2000,
+    "drop_rate_%": 50.0,
+    "completion_rate_%": 50.0,
+    "recommendation": "Priority: fix friction between 'Payment Added' and 'First Purchase'. 50.0% of users drop here (2,000 lost). Recovering half of these users would add 1,000 to the next stage."
+  }
+}
