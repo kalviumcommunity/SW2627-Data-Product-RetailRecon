@@ -5,6 +5,10 @@
 
 Stock Sync is an inventory analytics project that helps inventory managers identify stock shortages, excess inventory, sales trends, and return patterns across regional stores using an interactive dashboard.
 
+## Learning Guides
+
+- [SQL Filtering Guide](SQL_FILTERING_GUIDE.md) - a focused lesson on `WHERE`, `GROUP BY`, `HAVING`, and `ORDER BY` for operational reporting.
+
 ---
 
 ## Setup
