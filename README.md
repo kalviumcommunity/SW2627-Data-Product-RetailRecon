@@ -8,6 +8,7 @@ Stock Sync is an inventory analytics project that helps inventory managers ident
 ## Learning Guides
 
 - [SQL Filtering Guide](SQL_FILTERING_GUIDE.md) - a focused lesson on `WHERE`, `GROUP BY`, `HAVING`, and `ORDER BY` for operational reporting.
+- [SQL Joins Guide](SQL_JOINS_GUIDE.md) - a focused lesson on `INNER JOIN`, `LEFT JOIN`, `OUTER JOIN`, and join validation for relational analysis.
 
 ---
 
